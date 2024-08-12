@@ -1,2 +1,2 @@
 # Artifacts
-HTML &amp; JS Editor webui
+HTML &amp; JS Editor WebUI
