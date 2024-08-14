@@ -37,6 +37,7 @@
 
         .flex {
             display: flex;
+            flex-direction: row;
             height: 100vh;
             width: 100vw;
         }
@@ -141,25 +142,64 @@
             align-items: center;
             padding: 0.5rem;
         }
+
+        @media (max-width: 768px) {
+            .flex {
+                flex-direction: column;
+            }
+
+            .w-1\/2 {
+                width: 100%;
+                height: 50%;
+            }
+
+            .tabs {
+                gap: 0.5rem;
+                padding: 0.5rem;
+            }
+
+            .tab,
+            button {
+                font-size: 14px;
+                padding: 0.4rem 0.8rem;
+            }
+
+            .CodeMirror {
+                font-size: 14px;
+            }
+
+            iframe {
+                height: 100%;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .CodeMirror {
+                height: calc(100% - 2rem);
+            }
+        }
     </style>
 </head>
 
 <body>
     <div class="flex">
-        <!-- Left Side: HTML and JS Code Input with Tabs -->
-        <div class="border border-black rounded-lg w-1/2 overflow-auto code-container">
+        <!-- Left Side: HTML, CSS, and JS Code Input with Tabs -->
+        <div class="border border-black rounded-lg w-1/2 code-container">
             <div class="toolbar">
                 <div class="tabs">
                     <div id="htmlTab" class="tab tab-active cursor-pointer" onclick="showTab('html')">HTML</div>
+                    <div id="cssTab" class="tab cursor-pointer" onclick="showTab('css')">CSS</div>
                     <div id="jsTab" class="tab cursor-pointer" onclick="showTab('js')">JavaScript</div>
                 </div>
                 <button onclick="runCode()">Run Code</button>
             </div>
             <textarea id="htmlCode" class="code-tab"></textarea>
+            <textarea id="cssCode" class="code-tab hidden"></textarea>
             <textarea id="jsCode" class="code-tab hidden"></textarea>
         </div>
+
         <!-- Right Side: Preview -->
-        <div class="border border-black rounded-lg w-1/2 overflow-auto">
+        <div class="border border-black rounded-lg w-1/2 overflow-hidden">
             <iframe id="preview"></iframe>
         </div>
     </div>
@@ -168,9 +208,16 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/javascript/javascript.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/xml/xml.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/htmlmixed/htmlmixed.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/css/css.min.js"></script>
     <script>
         const htmlCodeMirror = CodeMirror.fromTextArea(document.getElementById('htmlCode'), {
             mode: 'htmlmixed',
+            lineNumbers: true,
+            theme: 'monokai'
+        });
+
+        const cssCodeMirror = CodeMirror.fromTextArea(document.getElementById('cssCode'), {
+            mode: 'css',
             lineNumbers: true,
             theme: 'monokai'
         });
@@ -183,13 +230,18 @@
 
         function showTab(tab) {
             htmlCodeMirror.getWrapperElement().classList.add('hidden');
+            cssCodeMirror.getWrapperElement().classList.add('hidden');
             jsCodeMirror.getWrapperElement().classList.add('hidden');
             document.getElementById('htmlTab').classList.remove('tab-active');
+            document.getElementById('cssTab').classList.remove('tab-active');
             document.getElementById('jsTab').classList.remove('tab-active');
 
             if (tab === 'html') {
                 htmlCodeMirror.getWrapperElement().classList.remove('hidden');
                 document.getElementById('htmlTab').classList.add('tab-active');
+            } else if (tab === 'css') {
+                cssCodeMirror.getWrapperElement().classList.remove('hidden');
+                document.getElementById('cssTab').classList.add('tab-active');
             } else {
                 jsCodeMirror.getWrapperElement().classList.remove('hidden');
                 document.getElementById('jsTab').classList.add('tab-active');
@@ -198,13 +250,48 @@
 
         function runCode() {
             const htmlCode = htmlCodeMirror.getValue();
+            const cssCode = cssCodeMirror.getValue();
             const jsCode = jsCodeMirror.getValue();
             const previewFrame = document.getElementById("preview").contentWindow.document;
 
             previewFrame.open();
-            previewFrame.write(htmlCode + '<script>' + jsCode + '<\/script>');
+            previewFrame.write(`
+                <html>
+                <head>
+                    <style>${cssCode}</style>
+                </head>
+                <body>
+                    ${htmlCode}
+                    <script>${jsCode}<\/script>
+                </body>
+                </html>
+            `);
             previewFrame.close();
+
+            // Clear previous console output
+            document.getElementById('consoleOutput').innerHTML = '';
+
+            // Listen for errors and output them to the bottom panel
+            window.onerror = function (message, source, lineno, colno, error) {
+                document.getElementById('consoleOutput').innerHTML += `<p>Error: ${message} at ${source}:${lineno}:${colno}</p>`;
+                return true;
+            };
         }
+
+        function adjustCodeMirrorHeight() {
+            const isMobile = window.innerWidth <= 768;
+            const codeMirrors = document.querySelectorAll('.CodeMirror');
+            codeMirrors.forEach(cm => {
+                if (isMobile) {
+                    cm.style.height = window.innerHeight / 2 - 50 + 'px';
+                } else {
+                    cm.style.height = '';
+                }
+            });
+        }
+
+        window.addEventListener('resize', adjustCodeMirrorHeight);
+        adjustCodeMirrorHeight();
 
         // Initially show HTML tab
         showTab('html');
