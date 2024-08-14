@@ -1,5 +1,6 @@
 # Artifacts
-<strong> HTML &amp; JS Editor WebUI <\strong> 
+<strong> HTML &amp; JS Editor WebUI 
+<\strong> 
 
 ## PC display
 <img src="https://github.com/user-attachments/assets/4bbbfa66-f9fe-4f89-b195-e6c9137a675c"/>
